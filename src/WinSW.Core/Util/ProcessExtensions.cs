@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using log4net;
+using NLog;
 using WinSW.Logging;
 using WinSW.Native;
 using static WinSW.Native.ConsoleApis;
@@ -13,7 +13,7 @@ namespace WinSW.Util
 {
     public static class ProcessExtensions
     {
-        private static readonly ILog Log = LogManager.GetLogger(LoggerNames.Service);
+        private static readonly Logger Log = LogManager.GetLogger(LoggerNames.Service);
 
         public static void StopTree(this Process process, int millisecondsTimeout)
         {

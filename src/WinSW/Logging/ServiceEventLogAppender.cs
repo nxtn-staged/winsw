@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
-using log4net.Appender;
-using log4net.Core;
+using NLog;
+using NLog.Targets;
 
 namespace WinSW.Logging
 {
@@ -8,43 +8,43 @@ namespace WinSW.Logging
     /// Implementes service Event log appender for log4j.
     /// The implementation presumes that service gets initialized after the logging.
     /// </summary>
-    internal sealed class ServiceEventLogAppender : AppenderSkeleton
+    internal sealed class ServiceEventLogTarget : TargetWithLayoutHeaderAndFooter
     {
         private readonly WrapperServiceEventLogProvider provider;
 
-        internal ServiceEventLogAppender(WrapperServiceEventLogProvider provider)
+        internal ServiceEventLogTarget(WrapperServiceEventLogProvider provider)
         {
             this.provider = provider;
         }
 
-        protected override void Append(LoggingEvent loggingEvent)
+        protected override void Write(LogEventInfo logEvent)
         {
             var eventLog = this.provider.Locate();
 
             if (eventLog is not null)
             {
-                eventLog.WriteEntry(loggingEvent.RenderedMessage, ToEventLogEntryType(loggingEvent.Level));
+                eventLog.WriteEntry(this.RenderLogEvent(this.Layout, logEvent), ToEventLogEntryType(logEvent.Level));
                 return;
             }
 
             try
             {
                 using var backupLog = new EventLog("Application", ".", "Windows Service Wrapper");
-                backupLog.WriteEntry(loggingEvent.RenderedMessage, ToEventLogEntryType(loggingEvent.Level));
+                backupLog.WriteEntry(this.RenderLogEvent(this.Layout, logEvent), ToEventLogEntryType(logEvent.Level));
             }
             catch
             {
             }
         }
 
-        private static EventLogEntryType ToEventLogEntryType(Level level)
+        private static EventLogEntryType ToEventLogEntryType(LogLevel level)
         {
-            if (level.Value >= Level.Error.Value)
+            if (level >= LogLevel.Error)
             {
                 return EventLogEntryType.Error;
             }
 
-            if (level.Value >= Level.Warn.Value)
+            if (level >= LogLevel.Warn)
             {
                 return EventLogEntryType.Warning;
             }

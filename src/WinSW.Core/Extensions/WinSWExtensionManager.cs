@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Xml;
-using log4net;
+using NLog;
 using WinSW.Logging;
 
 namespace WinSW.Extensions
@@ -12,7 +12,7 @@ namespace WinSW.Extensions
 
         public XmlServiceConfig ServiceConfig { get; }
 
-        private static readonly ILog Log = LogManager.GetLogger(LoggerNames.Service);
+        private static readonly Logger Log = LogManager.GetLogger(LoggerNames.Service);
 
         public WinSWExtensionManager(XmlServiceConfig serviceConfig)
         {
@@ -63,7 +63,7 @@ namespace WinSW.Extensions
                 }
                 catch (ExtensionException ex)
                 {
-                    Log.Fatal("onWrapperStarted() handler failed for " + ext.Value.DisplayName, ex);
+                    Log.Fatal(ex, "onWrapperStarted() handler failed for " + ext.Value.DisplayName);
                     throw; // Propagate error to stop the startup
                 }
             }
@@ -83,7 +83,7 @@ namespace WinSW.Extensions
                 }
                 catch (ExtensionException ex)
                 {
-                    Log.Error("beforeWrapperStopped() handler failed for " + ext.Value.DisplayName, ex);
+                    Log.Error(ex, "beforeWrapperStopped() handler failed for " + ext.Value.DisplayName);
                 }
             }
         }
@@ -102,7 +102,7 @@ namespace WinSW.Extensions
                 }
                 catch (ExtensionException ex)
                 {
-                    Log.Error("onProcessStarted() handler failed for " + ext.Value.DisplayName, ex);
+                    Log.Error(ex, "onProcessStarted() handler failed for " + ext.Value.DisplayName);
                 }
             }
         }
@@ -121,7 +121,7 @@ namespace WinSW.Extensions
                 }
                 catch (ExtensionException ex)
                 {
-                    Log.Error("onProcessTerminated() handler failed for " + ext.Value.DisplayName, ex);
+                    Log.Error(ex, "onProcessTerminated() handler failed for " + ext.Value.DisplayName);
                 }
             }
         }
@@ -173,7 +173,7 @@ namespace WinSW.Extensions
                 }
                 catch (Exception ex)
                 { // Consider any unexpected exception as fatal
-                    Log.Fatal("Failed to configure the extension " + id, ex);
+                    Log.Fatal(ex, "Failed to configure the extension " + id);
                     throw;
                 }
 

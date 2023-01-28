@@ -1,24 +1,24 @@
-﻿using System;
-using log4net.Appender;
-using log4net.Core;
+﻿using NLog;
+using NLog.Targets;
+using System;
 
 namespace WinSW.Logging
 {
-    internal sealed class WinSWConsoleAppender : AppenderSkeleton
+    internal sealed class WinSWConsoleTarget : TargetWithLayoutHeaderAndFooter
     {
-        protected override void Append(LoggingEvent loggingEvent)
+        protected override void Write(LogEventInfo logEvent)
         {
             Console.ResetColor();
 
-            var level = loggingEvent.Level;
+            var level = logEvent.Level;
             Console.ForegroundColor =
-                level >= Level.Error ? ConsoleColor.Red :
-                level >= Level.Warn ? ConsoleColor.Yellow :
-                level >= Level.Info ? ConsoleColor.Gray :
+                level >= LogLevel.Error ? ConsoleColor.Red :
+                level >= LogLevel.Warn ? ConsoleColor.Yellow :
+                level >= LogLevel.Info ? ConsoleColor.Gray :
                 ConsoleColor.DarkGray;
             try
             {
-                this.RenderLoggingEvent(Console.Out, loggingEvent);
+                Console.WriteLine(this.RenderLogEvent(this.Layout, logEvent));
             }
             finally
             {

@@ -9,16 +9,13 @@ using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
 using System.Linq;
-using System.Reflection;
 using System.Security.AccessControl;
 using System.Security.Principal;
 using System.ServiceProcess;
-using log4net;
-using log4net.Appender;
-using log4net.Config;
-using log4net.Core;
-using log4net.Layout;
 using Microsoft.Win32;
+using NLog;
+using NLog.Config;
+using NLog.Targets;
 using WinSW.Logging;
 using WinSW.Native;
 using WinSW.Util;
@@ -33,7 +30,7 @@ namespace WinSW
     {
         private const string NoPipe = "-";
 
-        private static readonly ILog Log = LogManager.GetLogger(LoggerNames.Console);
+        private static readonly Logger Log = LogManager.GetLogger(LoggerNames.Console);
 
         internal static Action<Exception, InvocationContext>? TestExceptionHandler;
         internal static XmlServiceConfig? TestConfig;
@@ -325,7 +322,7 @@ namespace WinSW
                     case InvalidDataException e:
                         {
                             string message = "The configuration file could not be loaded. " + e.Message;
-                            Log.Fatal(message, e);
+                            Log.Fatal(e, message);
                             context.ExitCode = -1;
                             break;
                         }
@@ -357,14 +354,14 @@ namespace WinSW
                     case Win32Exception e:
                         {
                             string message = e.Message;
-                            Log.Fatal(message, e);
+                            Log.Fatal(e, message);
                             context.ExitCode = e.NativeErrorCode;
                             break;
                         }
 
                     default:
                         {
-                            Log.Fatal("Unhandled exception", exception);
+                            Log.Fatal(exception, "Unhandled exception");
                             context.ExitCode = -1;
                             break;
                         }
@@ -1082,38 +1079,30 @@ namespace WinSW
             }
 
             // TODO: Make logging levels configurable
-            var fileLogLevel = Level.Debug;
+            var fileLogLevel = LogLevel.Debug;
 
             // TODO: Debug should not be printed to console by default. Otherwise commands like 'status' will be pollutted
             // This is a workaround till there is a better command line parsing, which will allow determining
-            var consoleLogLevel = Level.Info;
-            var eventLogLevel = Level.Warn;
+            var consoleLogLevel = LogLevel.Info;
+            var eventLogLevel = LogLevel.Warn;
 
-            var repository = LogManager.GetRepository(Assembly.GetExecutingAssembly());
+            var loggingConfig = new LoggingConfiguration();
 
             if (inConsoleMode)
             {
-                var consoleAppender = new WinSWConsoleAppender
+                var consoleTarget = new WinSWConsoleTarget()
                 {
-                    Name = "Wrapper console log",
-                    Threshold = consoleLogLevel,
-                    Layout = new PatternLayout("%message%newline"),
+                    Layout = "${message}${onexception:inner=${newline}}${exception}",
                 };
-                consoleAppender.ActivateOptions();
-
-                BasicConfigurator.Configure(repository, consoleAppender);
+                loggingConfig.AddRule(consoleLogLevel, LogLevel.Fatal, consoleTarget);
             }
             else
             {
-                var eventLogAppender = new ServiceEventLogAppender(WrapperService.EventLogProvider)
-                {
-                    Name = "Wrapper event log",
-                    Threshold = eventLogLevel,
-                };
-                eventLogAppender.ActivateOptions();
-
-                BasicConfigurator.Configure(repository, eventLogAppender);
+                var eventLogTarget = new ServiceEventLogTarget(WrapperService.EventLogProvider);
+                loggingConfig.AddRule(eventLogLevel, LogLevel.Fatal, eventLogTarget);
             }
+
+            LogManager.Configuration = loggingConfig;
 
             XmlServiceConfig config;
             if (path != null)
@@ -1133,19 +1122,15 @@ namespace WinSW
 
             // .wrapper.log
             string wrapperLogPath = Path.Combine(config.LogDirectory, config.BaseName + ".wrapper.log");
-            var fileAppender = new FileAppender
+            var fileTarget = new FileTarget()
             {
-                AppendToFile = true,
-                File = wrapperLogPath,
-                ImmediateFlush = true,
-                Name = "Wrapper file log",
-                Threshold = fileLogLevel,
-                LockingModel = new FileAppender.MinimalLock(),
-                Layout = new PatternLayout("%date{yyyy-MM-ddTHH:mm:ss.fff} %-5level %logger - %message%newline"),
+                Layout = "${date:format=yyyy-MM-ddTHH\\:mm\\:ss.fff} ${pad:padding=-5:inner=${level:uppercase=true}} ${logger} - ${message}${onexception:inner=${newline}}${exception}",
+                FileName = wrapperLogPath,
+                KeepFileOpen = false,
             };
-            fileAppender.ActivateOptions();
+            loggingConfig.AddRule(fileLogLevel, LogLevel.Fatal, fileTarget);
 
-            BasicConfigurator.Configure(repository, fileAppender);
+            LogManager.Configuration = loggingConfig;
 
             return config;
         }

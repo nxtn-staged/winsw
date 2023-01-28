@@ -5,7 +5,7 @@ using System.Reflection;
 using System.ServiceProcess;
 using System.Text;
 using System.Threading.Tasks;
-using log4net;
+using NLog;
 using WinSW.Extensions;
 using WinSW.Logging;
 using WinSW.Native;
@@ -20,7 +20,7 @@ namespace WinSW
 
         private static readonly int AdditionalStopTimeout = 1_000;
 
-        private static readonly ILog Log = LogManager.GetLogger(LoggerNames.Service);
+        private static readonly Logger Log = LogManager.GetLogger(LoggerNames.Service);
 
         private readonly XmlServiceConfig config;
 
@@ -144,7 +144,7 @@ namespace WinSW
             }
             catch (Exception e)
             {
-                Log.Error("Failed to log event in Windows Event Log: " + message + "; Reason: ", e);
+                Log.Error(e, "Failed to log event in Windows Event Log: " + message + "; Reason: ");
             }
         }
 
@@ -162,7 +162,7 @@ namespace WinSW
             }
             catch (Exception e)
             {
-                Log.Error("Failed to log event in Windows Event Log. Reason: ", e);
+                Log.Error(e, "Failed to log event in Windows Event Log. Reason: ");
             }
         }
 
@@ -208,7 +208,7 @@ namespace WinSW
             }
             catch (Exception e)
             {
-                Log.Error("Failed to start service.", e);
+                Log.Error(e, "Failed to start service.");
                 throw;
             }
         }
@@ -222,7 +222,7 @@ namespace WinSW
             }
             catch (Exception e)
             {
-                Log.Error("Failed to stop service.", e);
+                Log.Error(e, "Failed to stop service.");
                 throw;
             }
         }
@@ -237,7 +237,7 @@ namespace WinSW
             }
             catch (Exception e)
             {
-                Log.Error("Failed to shut down service.", e);
+                Log.Error(e, "Failed to shut down service.");
                 throw;
             }
         }
@@ -610,7 +610,7 @@ namespace WinSW
                     }
                     catch (Exception e)
                     {
-                        Log.Error("Unhandled exception in event handler.", e);
+                        Log.Error(e, "Unhandled exception in event handler.");
                     }
                 };
 

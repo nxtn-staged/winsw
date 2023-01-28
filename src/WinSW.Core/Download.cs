@@ -4,7 +4,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
-using log4net;
+using NLog;
 using WinSW.Logging;
 using WinSW.Util;
 
@@ -23,7 +23,7 @@ namespace WinSW
             Basic
         }
 
-        private static readonly ILog Logger = LogManager.GetLogger(LoggerNames.Service);
+        private static readonly Logger Logger = LogManager.GetLogger(LoggerNames.Service);
 
         public readonly string From;
         public readonly string To;
@@ -197,7 +197,7 @@ namespace WinSW
                 }
 
                 string errorMessage = $"Failed to download {this.From} to {this.To}";
-                Logger.Error(errorMessage, e);
+                Logger.Error(e, errorMessage);
                 if (this.FailOnError)
                 {
                     throw new IOException(errorMessage, e);
